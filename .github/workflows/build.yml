@@ -4,6 +4,7 @@ on:
   push:
     branches: [main, master]
     tags: ['v*']
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -27,12 +28,22 @@ jobs:
           foreach ($f in 'kfe.dll','kmenu.dll','kopt.dll','winmm.dll','KuangFrameExtrapolation.exe','KuangOptimizer.exe','KuangSetup.exe') {
             if (-not (Test-Path "build/Release/$f")) { Write-Error "Missing build/Release/$f"; exit 1 }
           }
+          Get-Item build/Release/KuangSetup.exe | Select-Object Name, Length
 
       - name: Upload KuangSetup.exe
         uses: actions/upload-artifact@v4
         with:
           name: KuangSetup
           path: build/Release/KuangSetup.exe
+
+      - name: Upload loose files (zip for manual install)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Kuang-loose-files
+          path: |
+            build/Release/*.dll
+            build/Release/KuangFrameExtrapolation.exe
+            build/Release/KuangOptimizer.exe
 
       - name: Publish release (tags v*)
         if: startsWith(github.ref, 'refs/tags/v')
