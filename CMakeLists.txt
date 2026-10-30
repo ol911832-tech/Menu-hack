@@ -118,7 +118,7 @@ add_executable(setup WIN32
     setup/setup.manifest)
 target_include_directories(setup PRIVATE shared)
 target_link_libraries(setup PRIVATE ole32 uuid shell32 advapi32 comctl32 user32 gdi32)
-target_compile_definitions(setup PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS KUANG_SETUP_VERSION="0.14.9")
+target_compile_definitions(setup PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS KUANG_SETUP_VERSION="0.14.10")
 set_target_properties(setup PROPERTIES OUTPUT_NAME "KuangSetup")
 target_sources(setup PRIVATE ${CMAKE_BINARY_DIR}/payload_$<CONFIG>.rc)
 add_dependencies(setup installer_payload)

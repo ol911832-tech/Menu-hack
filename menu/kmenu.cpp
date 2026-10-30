@@ -43,7 +43,7 @@
 #include "kcbf_blob.h"
 #include "kpfix_blob.h"
 
-#define KMENU_VERSION "0.14.9"
+#define KMENU_VERSION "0.14.10"
 #define KMENU_VERSION_W L"0.11.1"
 
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -311,12 +311,9 @@ const Text kTexts[] = {
     {"gl.ib.d", "Gives the game's own input thread the highest priority. In this version the game reads your keyboard and mouse on a separate thread (Raw Input) and stamps every press with the exact time; with this on, that stamp is taken at once even when the CPU is busy. It does not change the FPS, the physics or the inputs themselves. On a fast PC the difference is usually too small to notice: measure it with Input Latency.",
         "Le da la prioridad más alta al propio hilo de entrada del juego. En esta versión el juego lee tu teclado y ratón en un hilo aparte (Raw Input) y marca cada pulsación con la hora exacta; con esto la hora se toma al instante aunque la CPU esté ocupada. No cambia los FPS, la física ni las pulsaciones. En una PC rápida la diferencia suele ser demasiado pequeña para notarla: mídela con Latencia de entrada."},
     {"gl.cbf", "CBF", "CBF"},
-    {"gl.cbf.d", "Click Between Frames, exact: the game only cuts a physics step in two halves (a click lands on a 1/480 s grid, up to 2 ms early); this cuts the step at the exact instant of the click, also with this menu's Speedhack and in levels with their own Time Warp. It turns the game's Click Between Steps on. If the game's code is not the 2.2091 one it stays off and changes nothing. See kmenu.log.",
-        "Click Between Frames exacto: el juego solo parte un paso de la física en dos mitades (un clic cae en una rejilla de 1/480 s, hasta 2 ms antes); esto corta el paso en el instante exacto del clic, también con el Speedhack de este menú y en niveles con su propio Time Warp. Activa el Click Between Steps del juego. Si el código del juego no es el de 2.2091 se queda apagado y no cambia nada. Ver kmenu.log."},
+    {"gl.cbf.d", "Click Between Frames, exact: the game only cuts a physics step in two halves (a click lands on a 1/480 s grid, up to 2 ms early); this cuts the step at the exact instant of the click, also with this menu's Speedhack and in levels with their own Time Warp. It turns the game's Click Between Steps on. If the game's code is not the 2.2091 one it stays off and changes nothing. See kmenu.log. It also puts each click on the clock of the physics steps (the leftover time the game keeps for the next frame), so clicks land exactly at any speed.",
+        "Click Between Frames exacto: el juego solo parte un paso de la física en dos mitades (un clic cae en una rejilla de 1/480 s, hasta 2 ms antes); esto corta el paso en el instante exacto del clic, también con el Speedhack de este menú y en niveles con su propio Time Warp. Activa el Click Between Steps del juego. Si el código del juego no es el de 2.2091 se queda apagado y no cambia nada. Ver kmenu.log. También coloca cada clic en el reloj de los pasos de la física (el tiempo sobrante que el juego guarda para el frame siguiente), así los clics caen exactos a cualquier velocidad."},
     {"gl.cbf.off", "CBF is turned off in the Mods menu (Menu Hack column). Turn it on there to use it.", "El CBF está desactivado en el menú Mods (columna Menu Hack). Actívalo ahí para poder usarlo."},
-    {"gl.cbf.acc", "CBF: step clock", "CBF: reloj de pasos"},
-    {"gl.cbf.acc.d", "Switch for the exact CBF (on by default since 0.14.9). The game only runs whole physics steps and keeps the time left over for the next frame, so its steps start that much behind the clock the clicks are compared with: every click lands early by the leftover (0 to 4 ms, different every frame), at any speed. This adds the leftover to each click's time and keeps the clicks that wait for the next frame right. Off = the same as 0.14.7. Needs the exact CBF on. Also works in levels with their own Time Warp.",
-        "Interruptor del CBF exacto (encendido por defecto desde la 0.14.9). El juego solo corre pasos enteros de física y guarda el tiempo sobrante para el frame siguiente, así que sus pasos empiezan ese tiempo por detrás del reloj con el que se comparan los clics: cada clic cae antes por el sobrante (de 0 a 4 ms, distinto en cada frame), a cualquier velocidad. Esto suma el sobrante a la hora de cada clic y mantiene bien los clics que esperan al frame siguiente. Apagado = igual que la 0.14.7. Necesita el CBF exacto activo. También funciona en niveles con su propio Time Warp."},
     {"gl.cbf.fail", "CBF: this game version does not match (nothing was changed)", "CBF: esta versión del juego no coincide (no se cambió nada)"},
     {"mods.btn", "Mods", "Mods"},
     {"mods.d", "Every Kuang mod in the game folder: turn each one on or off and change its settings here.", "Todos los mods Kuang de la carpeta del juego: actívalos, desactívalos y cambia sus ajustes aquí."},
@@ -2983,7 +2980,7 @@ bool g_cbfExact = false, g_cbfFailed = false;
 const bool g_cbfTw = true;      // exact cuts also with a level's Time Warp != 1 (always, since 0.12.0)
 bool g_modCbf = true;           // "mod.cbf": the CBF module, switched in the Mods window
 inline bool cbfWanted() { return g_modCbf && g_cbfExact; }
-bool g_cbfAcc = true;           // "gl.cbf.acc" (0.14.8): test switch, click times put on the clock of the physics steps (see cbfAccStamp)
+bool g_cbfAcc = true;           // always on since 0.14.10 (was the "gl.cbf.acc" test switch of 0.14.8): click times put on the clock of the physics steps (see cbfAccStamp)
 inline bool cbfAccWanted() { return cbfWanted() && g_cbfAcc && !g_cbfFailed; }
 unsigned long long g_cbfAccN = 0; // presses it moved, and the leftover time it added (for the menu)
 double g_cbfAccSum = 0, g_cbfAccMax = 0;
@@ -3120,17 +3117,11 @@ void drawGlobalColumn(int index) {
             std::snprintf(b, sizeof b, g_lang == 1 ? "Cortes exactos aplicados: %llu (pasos con varios cortes: %llu)" : "Exact cuts applied: %llu (steps cut several times: %llu)", c, c2);
             hintText(b);
         }
-        { // test switch: click times on the clock of the physics steps (needs the exact CBF on)
-            bool accOff = !cbfWanted() || g_cbfFailed;
-            if (accOff) ImGui::BeginDisabled();
-            if (toggleRow("cbfacc", T("gl.cbf.acc"), T("gl.cbf.acc.d"), &g_cbfAcc)) cfgSetBool("gl.cbf.acc", g_cbfAcc);
-            if (accOff) ImGui::EndDisabled();
-            if (cbfAccWanted() && matches(T("gl.cbf.acc"))) {
-                char b[160];
-                std::snprintf(b, sizeof b, g_lang == 1 ? "Clics colocados: %llu (sobrante medio %.2f ms, max %.2f ms)" : "Presses placed: %llu (average leftover %.2f ms, max %.2f ms)",
-                              g_cbfAccN, g_cbfAccN ? g_cbfAccSum / static_cast<double>(g_cbfAccN) * 1000.0 : 0.0, g_cbfAccMax * 1000.0);
-                hintText(b);
-            }
+        if (cbfAccWanted() && matches(T("gl.cbf"))) { // click times are always put on the clock of the physics steps (merged into CBF in 0.14.10)
+            char b[160];
+            std::snprintf(b, sizeof b, g_lang == 1 ? "Clics colocados: %llu (sobrante medio %.2f ms, max %.2f ms)" : "Presses placed: %llu (average leftover %.2f ms, max %.2f ms)",
+                          g_cbfAccN, g_cbfAccN ? g_cbfAccSum / static_cast<double>(g_cbfAccN) * 1000.0 : 0.0, g_cbfAccMax * 1000.0);
+            hintText(b);
         }
         if (toggleRow("fpsbypass", T("gl.fps"), T("gl.fps.d"), &g_fpsOn)) { cfgSetBool("gl.fps", g_fpsOn); g_fpsLastApply = 0; }
         if (matches(T("gl.fps"))) {
@@ -6524,7 +6515,7 @@ void loadSettings() {
     g_fpsPrecise = cfgBool("gl.fps.p", true);
     g_inputBoost = cfgBool("gl.ib", false);
     g_cbfExact = cfgBool("gl.cbf", false);
-    g_cbfAcc = cfgBool("gl.cbf.acc", true);
+    g_cbfAcc = true; // step clock is part of CBF since 0.14.10 (the old "gl.cbf.acc" setting is ignored)
     g_modCbf = cfgBool("mod.cbf", true);
     // Precision Fix stays off: in 2.2091 CCDirector::calculateDeltaTime is never called (the game's run loop in
     // libcocos2d already measures each frame with QueryPerformanceCounter and calls setDeltaTime), so the patch never ran.
