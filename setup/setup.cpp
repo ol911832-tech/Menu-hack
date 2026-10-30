@@ -30,7 +30,7 @@
 #pragma comment(lib, "uuid.lib")
 
 #ifndef KUANG_SETUP_VERSION
-#define KUANG_SETUP_VERSION "0.14.9"
+#define KUANG_SETUP_VERSION "0.14.10"
 #endif
 
 // ------------------------------------------------------------------ language

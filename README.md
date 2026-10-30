@@ -128,6 +128,10 @@ el mod se desactiva solo, lo anota en su `.log` y no rompe el juego.
   - Wave: el juego ya la reconstruye cada frame; durante esa reconstrucción se adelanta solo su punta y luego se devuelve el valor. Sin trabajo extra.
   - La física y los puntos guardados de las estelas no se tocan. Solo actúa cuando el ícono va por delante (en interpolación, cuando va por detrás, no se toca para no doblar la estela en las esquinas del wave).
 
+## Cambios Kuang Menu 0.14.10
+
+- **CBF y reloj de pasos unidos**: se quitó el interruptor "CBF: step clock". Ahora el CBF exacto siempre coloca los clics en el reloj de los pasos de la física (lo que antes hacía ese interruptor). Debajo de CBF sigue el contador "Clics colocados". El ajuste viejo `gl.cbf.acc` del `kmenu.ini` se ignora.
+
 ## Cambios Kuang Menu 0.14.9
 
 - **CBF: reloj de pasos encendido por defecto** (si ya tenías `gl.cbf.acc` guardado en `kmenu.ini`, se respeta tu valor). Sigue pudiéndose apagar en la columna Global.
