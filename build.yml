@@ -1,0 +1,52 @@
+name: Build Kuang Setup
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure (VS 2022, ClangCL)
+        run: cmake -S . -B build -A x64 -T ClangCL
+
+      - name: Build (Release)
+        run: cmake --build build --config Release --parallel
+
+      - name: Check the outputs
+        shell: pwsh
+        run: |
+          foreach ($f in 'kfe.dll','kmenu.dll','kopt.dll','winmm.dll','KuangFrameExtrapolation.exe','KuangOptimizer.exe','KuangSetup.exe') {
+            if (-not (Test-Path "build/Release/$f")) { Write-Error "Missing build/Release/$f"; exit 1 }
+          }
+          Get-Item build/Release/KuangSetup.exe | Select-Object Name, Length
+
+      - name: Upload KuangSetup.exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: KuangSetup
+          path: build/Release/KuangSetup.exe
+
+      - name: Upload loose files (zip for manual install)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Kuang-loose-files
+          path: |
+            build/Release/*.dll
+            build/Release/KuangFrameExtrapolation.exe
+            build/Release/KuangOptimizer.exe
+
+      - name: Publish release (tags v*)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/Release/KuangSetup.exe
